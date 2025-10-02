@@ -12,7 +12,7 @@ import subprocess # Для запуска редактора как отдель
 
 class VideoMaskPlayer:
     def __init__(self, app):
-        self.video_path = "/home/kolpachkov/Projects/TRO/2.mov"
+        self.video_path = "C:/Users/multi/Desktop/TRO/2.mov"
         self.cap = None
         self.masks = []
         self.apply_mask = False # Изначально маска выключена, пока не придут данные
@@ -177,7 +177,7 @@ def main():
     app = QApplication(sys.argv) 
     player = VideoMaskPlayer(app)
     
-    video_path = "/home/kolpachkov/Projects/TRO/2.mov"
+    video_path = "2.mov"
     if not os.path.exists(video_path) or not player.load_video(video_path):
         print("Основное видео не найдено. Пожалуйста, проверьте путь.")
         return

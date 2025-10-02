@@ -66,7 +66,7 @@ class CanvasWidget(QWidget):
         self.shapes = []
         self.current_shape = None
         self.setMinimumSize(600, 400)
-        self.setStyleSheet("background-color: #333;")
+        # self.setStyleSheet("background-color: #FFFFFF;") # Убираем стиль, будем рисовать фон вручную
         self.last_width = self.width()
         self.last_height = self.height()
         
@@ -192,6 +192,8 @@ class CanvasWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
+        painter.fillRect(self.rect(), QColor("#39427535"))
+
         for i, shape in enumerate(self.shapes):
             if not shape.points: continue
             
@@ -208,7 +210,7 @@ class CanvasWidget(QWidget):
             if shape.is_closed and len(shape.points) > 2:
                 painter.drawLine(shape.points[-1], shape.points[0])
                 fill_color = QColor(shape.color)
-                fill_color.setAlpha(80)
+                fill_color.setAlpha(60) # Сделаем заливку еще более прозрачной
                 brush = QBrush(fill_color)
                 painter.setBrush(brush)
                 polygon = QPolygon(shape.points)
@@ -263,10 +265,9 @@ class MainWindow(QMainWindow):
 
         # Создаем кнопки
         self.btn_close = QPushButton("Замкнуть текущую фигуру")
-        self.btn_new = QPushButton("Новая фигура")
         self.btn_delete_last = QPushButton("Удалить последнюю фигуру")
         self.btn_clear = QPushButton("Очистить все")
-        self.btn_info = QPushButton("Инструкция")
+
         
         # ================== ИЗМЕНЕНИЕ 1: Текст кнопки ==================
         self.btn_send = QPushButton("Отправить и Очистить")
@@ -277,21 +278,19 @@ class MainWindow(QMainWindow):
 
         # Привязываем функции
         self.btn_close.clicked.connect(self.canvas.close_current_shape)
-        self.btn_new.clicked.connect(self.start_new_shape)
         self.btn_delete_last.clicked.connect(self.canvas.delete_last_shape)
         self.btn_clear.clicked.connect(self.canvas.clear_all)
-        self.btn_info.clicked.connect(self.show_instructions)
         self.btn_send.clicked.connect(self.send_shapes)
 
         # Компоновка интерфейса
         button_layout1 = QHBoxLayout()
         button_layout1.addWidget(self.btn_close)
-        button_layout1.addWidget(self.btn_new)
+       
         button_layout1.addWidget(self.btn_delete_last)
 
         button_layout2 = QHBoxLayout()
         button_layout2.addWidget(self.btn_clear)
-        button_layout2.addWidget(self.btn_info)
+
         button_layout2.addWidget(self.btn_send)
 
         main_layout = QVBoxLayout()
@@ -304,10 +303,7 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
 
-    def start_new_shape(self):
-        self.canvas.close_current_shape()
-        self.canvas.current_shape = None
-        print("Готов к рисованию новой фигуры.")
+
 
     def send_shapes(self):
         """Собирает, сериализует и отправляет данные, а затем очищает холст."""
@@ -322,6 +318,7 @@ class MainWindow(QMainWindow):
         for shape_dict in shapes_data:
             shape_dict['points'] = [[p[0] / width, p[1] / height] for p in shape_dict['points']]
 
+        shapes_data = [self.canvas.shape_to_dict(shape) for shape in self.canvas.shapes if shape.is_closed]
         try:
             json_data = json.dumps(shapes_data).encode('utf-8')
         except Exception as e:
@@ -343,15 +340,6 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Ошибка", "Не удалось подключиться к основному приложению. Убедитесь, что оно запущено.")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Произошла ошибка при отправке: {e}")
-
-    def show_instructions(self):
-        instructions = """
-        ИНСТРУКЦИЯ:
-        • ЛЕВЫЙ КЛИК - добавить точку к текущей фигуре
-        • ПРАВЫЙ КЛИК - завершить текущую фигуру и начать новую
-        • "Отправить и Очистить" - передает все замкнутые фигуры в основное приложение и очищает холст для создания новых.
-        """
-        QMessageBox.information(self, "Инструкция", instructions.strip())
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
